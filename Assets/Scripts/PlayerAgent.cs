@@ -21,14 +21,14 @@ public class PlayerAgent : MonoBehaviour
     public int AttackPower;
     public int Health;
     public bool isAttacking;
+    public bool isInAttackRange;
+    public float AttackRate;
+    private float attackTimer;
 
     public List<FollowerAgent> Followers;
 
     private void Start()
     {
-        isRunning = true;
-        isGettingReadyToFight = false;
-
         rBody = GetComponent<Rigidbody>();
         Followers = new List<FollowerAgent>();
 
@@ -37,6 +37,22 @@ public class PlayerAgent : MonoBehaviour
         GameManager.Instance.Events.OnPlayerPassThruGate += ManageGateEffect;
         GameManager.Instance.Events.OnFightSetup += SetupForFight;
         GameManager.Instance.Events.OnFightStarted += StartFighting;
+        GameManager.Instance.Events.OnFollowerAttacked += FollowerHit;
+        GameManager.Instance.Events.OnPlayerAttacked += GetHit;
+
+        GameManager.Instance.Events.OnLevelStarted += LevelStarted;
+        Init();
+    }
+
+    private void Init()
+    {
+        isInAttackRange = false;
+        attackTimer = 0f;
+
+        isRunning = true;
+        isGettingReadyToFight = false;
+        isAttacking = false;
+        
     }
 
     private void OnDestroy()
@@ -46,6 +62,39 @@ public class PlayerAgent : MonoBehaviour
         GameManager.Instance.Events.OnPlayerPassThruGate -= ManageGateEffect;
         GameManager.Instance.Events.OnFightSetup -= SetupForFight;
         GameManager.Instance.Events.OnFightStarted -= StartFighting;
+        GameManager.Instance.Events.OnFollowerAttacked -= FollowerHit;
+        GameManager.Instance.Events.OnPlayerAttacked -= GetHit;
+
+        GameManager.Instance.Events.OnLevelStarted -= LevelStarted;
+    }
+
+    public void LevelStarted()
+    {
+        foreach (FollowerAgent follower in Followers)
+            Destroy(follower.gameObject);
+
+        Followers.Clear();
+
+        transform.position = GameManager.Instance.Levels.CurrentLevel.LevelPlayerStartPoint.position;
+        Health = 20 + (GameManager.Instance.Levels.CurrentLevelId * 10);
+        Init();
+    }
+
+    private void GetHit(int damage)
+    {
+        Health -= damage;
+
+        if (Health <= 0)
+        {
+            isAttacking = false;
+            GameManager.Instance.Events.LevelFinished(false);
+        }
+    }
+
+    private void FollowerHit(FollowerAgent follower, int damage)
+    {
+        //Debug.Log("follower " + follower.name + " dmg: " + damage);
+        follower.GetHit(damage);
     }
 
     private void KillFollower(FollowerAgent follower)
@@ -160,9 +209,9 @@ public class PlayerAgent : MonoBehaviour
     {
         if (isGettingReadyToFight)
         {
-            transform.position = Vector3.MoveTowards(transform.position, GameManager.Instance.LevelPlayerFightStartPoint.position, 0.01f * runningSpeed * Time.deltaTime);
+            transform.position = Vector3.MoveTowards(transform.position, GameManager.Instance.Levels.CurrentLevel.LevelPlayerFightStartPoint.position, 0.01f * runningSpeed * Time.deltaTime);
 
-            if (Vector3.Distance(transform.position, GameManager.Instance.LevelPlayerFightStartPoint.position) < 0.1f)
+            if (Vector3.Distance(transform.position, GameManager.Instance.Levels.CurrentLevel.LevelPlayerFightStartPoint.position) < 0.1f)
             {
                 isGettingReadyToFight = false;
                 GameManager.Instance.Events.FightStarted();
@@ -171,9 +220,42 @@ public class PlayerAgent : MonoBehaviour
 
         if (isAttacking)
         {
-            if (Vector3.Distance(transform.position, GameManager.Instance.Boss.transform.position) > 0.1f)
-                transform.position = Vector3.MoveTowards(transform.position, GameManager.Instance.Boss.transform.position, 0.01f * runningSpeed * Time.deltaTime);
+            if (!isInAttackRange)
+            {
+                Vector3 newPos = Vector3.MoveTowards(transform.position, GameManager.Instance.Levels.CurrentLevel.Boss.transform.position, 0.01f * runningSpeed * Time.deltaTime);
+                newPos.y = transform.position.y;
+                transform.position = newPos;
+            }
+            else
+            {
+                attackTimer -= Time.deltaTime;
+
+                if (attackTimer < 0f)
+                {
+                    GameManager.Instance.Events.BossAttacked(AttackPower);
+                    attackTimer = AttackRate;
+                }
+            }
         }
 
+
+
+    }
+
+    private void OnCollisionEnter(Collision collision)
+    {
+        if (collision.collider.tag == "Boss")
+        {
+            isInAttackRange = true;
+        }
+    }
+
+    private void OnCollisionExit(Collision collision)
+    {
+        if (collision.collider.tag == "Boss")
+        {
+            isInAttackRange = false;
+            attackTimer = 0f;
+        }
     }
 }

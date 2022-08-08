@@ -16,7 +16,7 @@ GameObject:
   - component: {fileID: 3707449122375636555}
   m_Layer: 0
   m_Name: Follower
-  m_TagString: Untagged
+  m_TagString: Follower
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -117,8 +117,10 @@ MonoBehaviour:
   FollowingColor: {r: 0.39174473, g: 0.5471698, b: 0.14195444, a: 0}
   FollowSpeed: 7
   FollowDistance: {x: 0, y: 0, z: 0}
-  AttackPower: 5
+  AttackPower: 1
   Health: 5
+  isInAttackRange: 0
+  AttackRate: 0.25
 --- !u!54 &3707449122375636555
 Rigidbody:
   m_ObjectHideFlags: 0

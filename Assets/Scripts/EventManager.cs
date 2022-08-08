@@ -16,8 +16,11 @@ public class EventManager : MonoBehaviour
     public Action OnFightSetup;
     public Action OnFightStarted;
 
+    public Action<int> OnBossAttacked;
+    public Action<FollowerAgent, int> OnFollowerAttacked;
+    public Action<int> OnPlayerAttacked;
 
-
+    
     public void GameStarted()
     {
         OnGameStarted?.Invoke();
@@ -56,6 +59,24 @@ public class EventManager : MonoBehaviour
     public void FightStarted()
     {
         OnFightStarted?.Invoke();
+    }
+
+    public void BossAttacked(int damage)
+    {
+        //Debug.Log("boss attacked: " + damage);
+        OnBossAttacked?.Invoke(damage);
+    }
+
+    public void FollowerAttacked(FollowerAgent follower, int damage)
+    {
+        //Debug.Log("follower attacked: " + damage);
+        OnFollowerAttacked?.Invoke(follower, damage);
+    }
+
+    public void PlayerAttacked(int damage)
+    {
+        //Debug.Log("player attacked: " + damage);
+        OnPlayerAttacked?.Invoke(damage);
     }
 
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -17,6 +18,8 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    public LevelManager Levels;
+
     public EventManager Events;
     public PlayerAgent Player;
 
@@ -24,14 +27,45 @@ public class GameManager : MonoBehaviour
 
     public GameObject FollowerPrefab;
 
-    public Transform LevelPlayerFightStartPoint;
+    public GameObject PlayerWonPanel;
+    public GameObject PlayerLostPanel;
 
 
     private void Start()
     {
-        Events.GameStarted();      
-        
+        Events.OnLevelFinished += EndOfLevel;
+        Events.OnLevelStarted += StartOfLevel;
+
+        Levels.StartLevelManager();
+        Player.LevelStarted();
     }
 
+    private void OnDestroy()
+    {
+        Events.OnLevelFinished -= EndOfLevel;
+        Events.OnLevelStarted -= StartOfLevel;
+    }
+
+    private void StartOfLevel()
+    {
+        PlayerLostPanel.SetActive(false);
+        PlayerWonPanel.SetActive(false);
+    }
+
+    private void EndOfLevel(bool state)
+    {
+        PlayerLostPanel.SetActive(!state);
+        PlayerWonPanel.SetActive(state);
+    }
+
+    public void NextLevel()
+    {
+        Levels.GoToNextLevel();
+    }
+
+    public void PlayAgain()
+    {
+        Levels.RestartLevel();
+    }
 
 }
